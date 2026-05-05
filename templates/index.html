@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCQ Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d0d0d;
+    --surface:   #161616;
+    --border:    #2a2a2a;
+    --accent:    #e8ff47;
+    --accent2:   #47c2ff;
+    --text:      #e8e8e8;
+    --muted:     #666;
+    --mcq:       #e8ff47;
+    --two:       #a8ff78;
+    --three:     #47c2ff;
+    --five:      #ff9f47;
+    --ten:       #ff6b9d;
+    --radius:    10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lora', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid background ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── Header ── */
+  header { margin-bottom: 52px; }
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -.02em;
+    color: #fff;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: .95rem;
+    font-style: italic;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 28px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* ── Form controls ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  @media(max-width: 640px) {
+    .grid-2, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media(max-width: 420px) {
+    .grid-2, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  select, input[type="number"] {
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Lora', serif;
+    font-size: .9rem;
+    padding: 10px 12px;
+    transition: border-color .2s;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(232,255,71,.08);
+  }
+  select:disabled { opacity: .4; cursor: not-allowed; }
+  input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
+
+  /* ── Button ── */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--accent);
+    color: #0d0d0d;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: .02em;
+    border: none;
+    border-radius: 8px;
+    padding: 16px 32px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(232,255,71,.25);
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  .btn.loading .spinner { display: block; }
+  .btn.loading .btn-text { opacity: .5; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Error / notice ── */
+  .notice {
+    border-radius: 7px;
+    padding: 13px 16px;
+    font-size: .88rem;
+    font-family: 'JetBrains Mono', monospace;
+    display: none;
+    margin-top: 16px;
+  }
+  .notice.error   { background: rgba(255,80,80,.08); border: 1px solid rgba(255,80,80,.3); color: #ff8080; }
+  .notice.success { background: rgba(232,255,71,.06); border: 1px solid rgba(232,255,71,.2); color: var(--accent); }
+  .notice.show    { display: block; }
+
+  /* ── Output area ── */
+  #output { display: none; }
+  #output.show { display: block; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin: 32px 0 16px;
+  }
+  .section-header .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .section-header .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .pill-mcq   { background: rgba(232,255,71,.12);  color: var(--mcq);   }
+  .pill-two   { background: rgba(168,255,120,.12); color: var(--two);   }
+  .pill-three { background: rgba(71,194,255,.12);  color: var(--three); }
+  .pill-five  { background: rgba(255,159,71,.12);  color: var(--five);  }
+  .pill-ten   { background: rgba(255,107,157,.12); color: var(--ten);   }
+
+  /* ── Question cards ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 12px;
+    animation: fadeUp .35s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .q-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: .08em;
+  }
+  .q-text {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .options { display: flex; flex-direction: column; gap: 7px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 13px;
+    font-size: .9rem;
+    line-height: 1.5;
+    transition: border-color .15s;
+  }
+  .option.correct {
+    border-color: var(--accent);
+    background: rgba(232,255,71,.06);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .option-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    color: var(--muted);
+    min-width: 18px;
+    padding-top: 1px;
+  }
+  .option.correct .option-label { color: var(--accent); }
+
+  /* ── Stats bar ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  @media(max-width: 560px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-n {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-l {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 5px;
+  }
+  .c-mcq   { color: var(--mcq);   }
+  .c-two   { color: var(--two);   }
+  .c-three { color: var(--three); }
+  .c-five  { color: var(--five);  }
+  .c-ten   { color: var(--ten);   }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="tag">AI-Powered</div>
+    <h1>MCQ <span>Generator</span></h1>
+    <p class="subtitle">Select a book, define a page range, and let AI craft your question paper.</p>
+  </header>
+
+  <!-- Selection Card -->
+  <div class="card">
+    <div class="card-title">01 — Select Source</div>
+    <div class="grid-4" style="margin-bottom:16px;">
+      <div class="field">
+        <label>Board</label>
+        <select id="board" onchange="loadClasses()">
+          <option value="">— Board —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Class</label>
+        <select id="class" disabled onchange="loadSubjects()">
+          <option value="">— Class —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <select id="subject" disabled onchange="loadBooks()">
+          <option value="">— Subject —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Book</label>
+        <select id="book" disabled onchange="loadPageRange()">
+          <option value="">— Book —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card-title">02 — Page Range <span id="page-hint" style="font-size:.8em;color:var(--muted);"></span></div>
+    <div class="grid-2">
+      <div class="field">
+        <label>From Page</label>
+        <input type="number" id="page_start" min="1" placeholder="e.g. 1" disabled>
+      </div>
+      <div class="field">
+        <label>To Page</label>
+        <input type="number" id="page_end" min="1" placeholder="e.g. 50" disabled>
+      </div>
+    </div>
+
+    <div id="form-notice" class="notice"></div>
+    <button class="btn" id="gen-btn" onclick="generateMCQ()" disabled>
+      <span class="spinner"></span>
+      <span class="btn-text">Generate Question Paper</span>
+    </button>
+  </div>
+
+  <!-- Output -->
+  <div id="output">
+    <div class="stats" id="stats-bar"></div>
+    <hr>
+
+    <div id="mcq-section"></div>
+    <div id="two-section"></div>
+    <div id="three-section"></div>
+    <div id="five-section"></div>
+    <div id="ten-section"></div>
+  </div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const API = '';
+
+// ── Utility ─────────────────────────────────────────────────────────────────
+
+async function apiFetch(url) {
+  const r = await fetch(API + url);
+  if (!r.ok) throw new Error((await r.json()).error || r.statusText);
+  return r.json();
+}
+
+function resetSelect(id, placeholder, disable = true) {
+  const el = $(id);
+  el.innerHTML = `<option value="">${placeholder}</option>`;
+  el.disabled = disable;
+}
+
+function showNotice(msg, type = 'error') {
+  const el = $('form-notice');
+  el.textContent = msg;
+  el.className = `notice ${type} show`;
+}
+function clearNotice() {
+  $('form-notice').className = 'notice';
+}
+
+function setLoading(on) {
+  const btn = $('gen-btn');
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+
+function checkGenReady() {
+  const ready = $('board').value && $('class').value &&
+                $('subject').value && $('book').value;
+  $('gen-btn').disabled = !ready;
+}
+
+// ── Dropdown loaders ─────────────────────────────────────────────────────────
+
+async function initBoards() {
+  try {
+    const boards = await apiFetch('/boards');
+    const sel = $('board');
+    boards.forEach(b => sel.add(new Option(b, b)));
+  } catch(e) {
+    showNotice('Failed to load boards: ' + e.message);
+  }
+}
+
+async function loadClasses() {
+  const board = $('board').value;
+  clearNotice();
+  resetSelect('class', '— Class —');
+  resetSelect('subject', '— Subject —');
+  resetSelect('book', '— Book —');
+  $('page_start').disabled = $('page_end').disabled = true;
+  $('page-hint').textContent = '';
+  checkGenReady();
+  if (!board) return;
+  try {
+    const classes = await apiFetch(`/classes?board=${encodeURIComponent(board)}`);
+    const sel = $('class');
+    sel.disabled = false;
+    classes.forEach(c => sel.add(new Option(c, c)));
+  } catch(e) { showNotice(e.message); }
+}
+
+async function loadSubjects() {
+  const board = $('board').value, cls = $('class').value;
+  clearNotice();
+  resetSelect('subject', '— Subject —');
+  resetSelect('book', '— Book —');
+  checkGenReady();
+  if (!cls) return;
+  try {
+    const subjects = await apiFetch(`/subjects_by_class?board=${encodeURIComponent(board)}&class=${encodeURIComponent(cls)}`);
+    const sel = $('subject');
+    sel.disabled = false;
+    subjects.forEach(s => sel.add(new Option(s, s)));
+  } catch(e) { showNotice(e.message); }
+}
+
+async function loadBooks() {
+  const board = $('board').value, cls = $('class').value, sub = $('subject').value;
+  clearNotice();
+  resetSelect('book', '— Book —');
+  checkGenReady();
+  if (!sub) return;
+  try {
+    const books = await apiFetch(`/books_by_subject?board=${encodeURIComponent(board)}&class=${encodeURIComponent(cls)}&subject=${encodeURIComponent(sub)}`);
+    const sel = $('book');
+    sel.disabled = false;
+    books.forEach(b => sel.add(new Option(b, b)));
+  } catch(e) { showNotice(e.message); }
+}
+
+async function loadPageRange() {
+  const board = $('board').value, cls = $('class').value,
+        sub = $('subject').value, book = $('book').value;
+  checkGenReady();
+  if (!book) return;
+  try {
+    const { min, max } = await apiFetch(
+      `/page_range?board=${encodeURIComponent(board)}&class=${encodeURIComponent(cls)}&subject=${encodeURIComponent(sub)}&book=${encodeURIComponent(book)}`
+    );
+    $('page_start').min = $('page_end').min = min;
+    $('page_start').max = $('page_end').max = max;
+    $('page_start').value = min;
+    $('page_end').value = max;
+    $('page_start').disabled = $('page_end').disabled = false;
+    $('page-hint').textContent = `(pages ${min}–${max})`;
+  } catch(e) {
+    $('page-hint').textContent = '';
+  }
+}
+
+// ── MCQ Generation ───────────────────────────────────────────────────────────
+
+async function generateMCQ() {
+  clearNotice();
+  setLoading(true);
+  $('output').className = '';
+
+  const payload = {
+    board:   $('board').value,
+    class:   $('class').value,
+    subject: $('subject').value,
+    book:    $('book').value,
+    page_start: $('page_start').value ? parseInt($('page_start').value) : null,
+    page_end:   $('page_end').value   ? parseInt($('page_end').value)   : null,
+  };
+
+  try {
+    const res = await fetch(API + '/generate-mcq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Generation failed');
+    renderOutput(data);
+  } catch(e) {
+    showNotice(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+
+function renderOutput(data) {
+  // Stats
+  $('stats-bar').innerHTML = [
+    { n: data.mcq?.length || 0,         l: '1-Mark MCQ',  c: 'c-mcq'   },
+    { n: data.two_marks?.length || 0,   l: '2-Mark',      c: 'c-two'   },
+    { n: data.three_marks?.length || 0, l: '3-Mark',      c: 'c-three' },
+    { n: data.five_marks?.length || 0,  l: '5-Mark',      c: 'c-five'  },
+    { n: data.ten_marks?.length || 0,   l: '10-Mark',     c: 'c-ten'   },
+  ].map(s => `
+    <div class="stat">
+      <div class="stat-n ${s.c}">${s.n}</div>
+      <div class="stat-l">${s.l}</div>
+    </div>`).join('');
+
+  renderMCQSection('mcq-section',   data.mcq,         '1-Mark MCQ',  'mcq',   'pill-mcq');
+  renderQSection(  'two-section',   data.two_marks,   '2-Mark Questions', 'two',   'pill-two');
+  renderQSection(  'three-section', data.three_marks, '3-Mark Questions', 'three', 'pill-three');
+  renderQSection(  'five-section',  data.five_marks,  '5-Mark Questions', 'five',  'pill-five');
+  renderQSection(  'ten-section',   data.ten_marks,   '10-Mark Questions','ten',   'pill-ten');
+
+  $('output').className = 'show';
+  $('output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderMCQSection(containerId, questions, title, colorKey, pillClass) {
+  if (!questions || !questions.length) { $(containerId).innerHTML = ''; return; }
+  const cards = questions.map((q, i) => {
+    const opts = (q.options || []).map(opt => {
+      const isCorrect = opt === q.answer;
+      const letter = opt.match(/^([A-D])[.)]/)?.[1] || '';
+      return `<div class="option${isCorrect ? ' correct' : ''}">
+        <span class="option-label">${letter}</span>
+        <span>${opt.replace(/^[A-D][.)]\s*/,'')}</span>
+      </div>`;
+    }).join('');
+    return `<div class="q-card" style="animation-delay:${i*40}ms">
+      <div class="q-num">Q${i+1}</div>
+      <div class="q-text">${q.question}</div>
+      <div class="options">${opts}</div>
+    </div>`;
+  }).join('');
+
+  $(containerId).innerHTML = `
+    <div class="section-header">
+      <span class="pill ${pillClass}">${colorKey}</span>
+      <h2>${title}</h2>
+      <span class="count">${questions.length} questions</span>
+    </div>
+    ${cards}`;
+}
+
+function renderQSection(containerId, questions, title, colorKey, pillClass) {
+  if (!questions || !questions.length) { $(containerId).innerHTML = ''; return; }
+  const cards = questions.map((q, i) => `
+    <div class="q-card" style="animation-delay:${i*40}ms">
+      <div class="q-num">Q${i+1}</div>
+      <div class="q-text">${q.question}</div>
+    </div>`).join('');
+
+  $(containerId).innerHTML = `
+    <div class="section-header">
+      <span class="pill ${pillClass}">${colorKey}</span>
+      <h2>${title}</h2>
+      <span class="count">${questions.length} questions</span>
+    </div>
+    ${cards}`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+initBoards();
+</script>
+</body>
+</html>
