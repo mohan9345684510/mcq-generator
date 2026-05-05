@@ -1,2 +1,2 @@
 # mcq-generator
-MCQ Generator For Enni 
+MCQ Generator For Eni 
